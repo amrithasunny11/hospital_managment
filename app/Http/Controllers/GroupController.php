@@ -26,7 +26,7 @@ class GroupController extends Controller
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $group = Group::create($request->only(['name', 'description', 'parent_id','hospital_id']));
+            $group = Group::create($request->only(['name', 'description', 'parent_id', 'hospital_id']));
 
             return response()->json([
                 'message' => 'Group created successfully',
@@ -47,7 +47,7 @@ class GroupController extends Controller
             $hospitals = Hospital::with(['groups' => function ($query) {
                 $query->whereNull('parent_id')->with('children');
             }])->get();
-    
+
             $formattedHospitals = $hospitals->map(function ($hospital) {
                 return [
                     'id' => $hospital->id,
@@ -71,25 +71,29 @@ class GroupController extends Controller
     }
 
     private function formatGroup($group)
-{
-    return [
-        'id' => $group->id,
-        'name' => $group->name,
-        'description' => $group->description,
-        'children' => $group->children->map(function ($child) {
-            return $this->formatGroup($child);
-        }),
-    ];
-}
+    {
+        return [
+            'id' => $group->id,
+            'name' => $group->name,
+            'description' => $group->description,
+            'children' => $group->children->map(function ($child) {
+                return $this->formatGroup($child);
+            }),
+        ];
+    }
 
     // Retrieve a specific group by ID
     public function show($id)
     {
         try {
+            // Retrieve the group along with its children
             $group = Group::with('children')->findOrFail($id);
 
+            // Format the response (optional if needed)
+            $formattedGroup = $this->formatGroup($group);
+
             return response()->json([
-                'group' => $group
+                'group' => $formattedGroup
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -102,6 +106,7 @@ class GroupController extends Controller
             ], 500);
         }
     }
+
 
     // Update a group
     public function update(Request $request, $id)
@@ -120,7 +125,7 @@ class GroupController extends Controller
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $group->update($request->only(['name', 'description', 'parent_id']));
+            $group->update($request->only(['name', 'description', 'parent_id','hospital_id']));
 
             return response()->json([
                 'message' => 'Group updated successfully',
