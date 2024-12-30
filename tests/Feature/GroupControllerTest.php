@@ -51,7 +51,7 @@ class GroupControllerTest extends TestCase
             'description' => null
         ]);
 
-        $response->assertStatus(403)
+        $response->assertStatus(401)
             ->assertJson([
                 'message' => 'Unauthorized'
             ]);
@@ -101,7 +101,7 @@ class GroupControllerTest extends TestCase
             'description' => 'Updated description'
         ]);
 
-        $response->assertStatus(403)
+        $response->assertStatus(401)
             ->assertJson([
                 'message' => 'Unauthorized'
             ]);
@@ -131,7 +131,7 @@ class GroupControllerTest extends TestCase
 
         $response = $this->actingAs($user, 'sanctum')->deleteJson("/api/groups/{$group->id}");
 
-        $response->assertStatus(403)
+        $response->assertStatus(401)
             ->assertJson([
                 'message' => 'Unauthorized'
             ]);
