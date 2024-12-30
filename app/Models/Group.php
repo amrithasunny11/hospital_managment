@@ -9,7 +9,7 @@ class Group extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'parent_id'];
+    protected $fillable = ['name', 'description', 'parent_id','hospital_id',];
 
     /**
      * Get the parent group of this group.
@@ -26,4 +26,6 @@ class Group extends Model
     {
         return $this->hasMany(Group::class, 'parent_id');
     }
+
+    
 }

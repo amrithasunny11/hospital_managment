@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Exception;
+use App\Models\Hospital;
 
 class GroupController extends Controller
 {
@@ -17,14 +18,15 @@ class GroupController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'parent_id' => 'nullable|exists:groups,id'
+                'parent_id' => 'nullable|exists:groups,id',
+                'hospital_id' => 'exists:hospitals,id'
             ]);
 
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $group = Group::create($request->only(['name', 'description', 'parent_id']));
+            $group = Group::create($request->only(['name', 'description', 'parent_id','hospital_id']));
 
             return response()->json([
                 'message' => 'Group created successfully',
@@ -42,10 +44,23 @@ class GroupController extends Controller
     public function index()
     {
         try {
-            $groups = Group::with('children')->whereNull('parent_id')->get();
+            $hospitals = Hospital::with(['groups' => function ($query) {
+                $query->whereNull('parent_id')->with('children');
+            }])->get();
+    
+            $formattedHospitals = $hospitals->map(function ($hospital) {
+                return [
+                    'id' => $hospital->id,
+                    'name' => $hospital->name,
+                    'address' => $hospital->address,
+                    'groups' => $hospital->groups->map(function ($group) {
+                        return $this->formatGroup($group);
+                    }),
+                ];
+            });
 
             return response()->json([
-                'groups' => $groups
+                'groups' => $formattedHospitals
             ], 200);
         } catch (Exception $e) {
             return response()->json([
@@ -54,6 +69,18 @@ class GroupController extends Controller
             ], 500);
         }
     }
+
+    private function formatGroup($group)
+{
+    return [
+        'id' => $group->id,
+        'name' => $group->name,
+        'description' => $group->description,
+        'children' => $group->children->map(function ($child) {
+            return $this->formatGroup($child);
+        }),
+    ];
+}
 
     // Retrieve a specific group by ID
     public function show($id)
@@ -85,7 +112,8 @@ class GroupController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'sometimes|string|max:255',
                 'description' => 'nullable|string',
-                'parent_id' => 'nullable|exists:groups,id|not_in:' . $id, // Prevent setting itself as parent
+                'parent_id' => 'nullable|exists:groups,id|not_in:' . $id, // Prevent setting itself as parent,
+                'hospital_id' => 'exists:hospitals,id'
             ]);
 
             if ($validator->fails()) {
