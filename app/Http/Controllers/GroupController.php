@@ -60,7 +60,7 @@ class GroupController extends Controller
             });
 
             return response()->json([
-                'groups' => $formattedHospitals
+                'hospitals' => $formattedHospitals
             ], 200);
         } catch (Exception $e) {
             return response()->json([
